@@ -1,19 +1,11 @@
 {
-  "name": "kasa-rental-app",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^4.19.2"
-  },
-  "engines": {
-    "node": "18.x"
-  }
+  "umbrellas": [
+    { "id": "KASA-A-01", "status": "利用可能", "userId": "", "lastUpdateTime": "" },
+    { "id": "KASA-A-02", "status": "利用可能", "userId": "", "lastUpdateTime": "" },
+    { "id": "KASA-A-03", "status": "利用可能", "userId": "", "lastUpdateTime": "" },
+    { "id": "KASA-A-04", "status": "利用可能", "userId": "", "lastUpdateTime": "" },
+    { "id": "KASA-A-05", "status": "利用可能", "userId": "", "lastUpdateTime": "" },
+    { "id": "KASA-A-06", "status": "利用可能", "userId": "", "lastUpdateTime": "" }
+  ],
+  "logs": []
 }
