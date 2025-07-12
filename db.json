@@ -1,11 +1,11 @@
 {
   "umbrellas": [
-    { "id": "KASA-A-01", "status": "利用可能", "userId": "", "lastUpdateTime": "" },
-    { "id": "KASA-A-02", "status": "利用可能", "userId": "", "lastUpdateTime": "" },
-    { "id": "KASA-A-03", "status": "利用可能", "userId": "", "lastUpdateTime": "" },
-    { "id": "KASA-A-04", "status": "利用可能", "userId": "", "lastUpdateTime": "" },
-    { "id": "KASA-A-05", "status": "利用可能", "userId": "", "lastUpdateTime": "" },
-    { "id": "KASA-A-06", "status": "利用可能", "userId": "", "lastUpdateTime": "" }
+    { "id": "KASA-A-01", "status": "利用可能", "userId": "", "displayName": "", "lastUpdateTime": "" },
+    { "id": "KASA-A-02", "status": "利用可能", "userId": "", "displayName": "", "lastUpdateTime": "" },
+    { "id": "KASA-A-03", "status": "利用可能", "userId": "", "displayName": "", "lastUpdateTime": "" },
+    { "id": "KASA-A-04", "status": "利用可能", "userId": "", "displayName": "", "lastUpdateTime": "" },
+    { "id": "KASA-A-05", "status": "利用可能", "userId": "", "displayName": "", "lastUpdateTime": "" },
+    { "id": "KASA-A-06", "status": "利用可能", "userId": "", "displayName": "", "lastUpdateTime": "" }
   ],
   "logs": []
 }
