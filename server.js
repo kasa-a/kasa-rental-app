@@ -1,3 +1,4 @@
+// 必要な部品を読み込む
 const express = require("express");
 const cors = require("cors");
 const fs = require("fs").promises; // ファイルを操作するための部品
@@ -71,6 +72,20 @@ app.post("/api/action", async (req, res) => {
     console.error("Error:", error);
     res.status(500).send({ success: false, message: "サーバーでエラーが発生しました。" });
   }
+});
+
+// ▼▼▼ 管理者向けAPIを追加 ▼▼▼
+
+// 管理者向けにログを返すAPIエンドポイント
+app.get("/api/logs", async (req, res) => {
+  const dbData = JSON.parse(await fs.readFile(DB_PATH));
+  res.json(dbData.logs.slice().reverse()); // 最新のものが上に来るように
+});
+
+// 管理者向けに傘の状態を返すAPIエンドポイント
+app.get("/api/status", async (req, res) => {
+  const dbData = JSON.parse(await fs.readFile(DB_PATH));
+  res.json(dbData.umbrellas);
 });
 
 // サーバーを起動
