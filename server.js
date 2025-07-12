@@ -1,20 +1,19 @@
 // 必要な部品を読み込む
 const express = require("express");
 const cors = require("cors");
-const fs = require("fs").promises; // ファイルを操作するための部品
+const fs = require("fs").promises;
 
 const app = express();
-const DB_PATH = "./db.json"; // データベースファイルへのパス
+const DB_PATH = "./db.json";
 
 // アプリの設定
 app.use(cors());
 app.use(express.json());
-app.use(express.static("public")); // publicフォルダをWebサイトとして公開
+app.use(express.static("public"));
 
 // メインの処理を行うAPIエンドポイント
 app.post("/api/action", async (req, res) => {
   try {
-    // データベースから最新情報を読み込む
     const dbData = JSON.parse(await fs.readFile(DB_PATH));
     const { action, umbrellaId, userId, displayName } = req.body;
     let result;
@@ -22,6 +21,7 @@ app.post("/api/action", async (req, res) => {
     const umbrella = dbData.umbrellas.find((u) => u.id === umbrellaId);
 
     switch (action) {
+      // (checkStatusは変更ありません)
       case "checkStatus":
         if (!umbrella) {
           result = { status: "Not Found" };
@@ -39,8 +39,10 @@ app.post("/api/action", async (req, res) => {
         } else if (umbrella.status === "貸出中") {
           result = { success: false, message: "この傘はすでに貸し出し中です。" };
         } else {
+          // ▼▼▼ displayNameも保存するよう修正 ▼▼▼
           umbrella.status = "貸出中";
           umbrella.userId = userId;
+          umbrella.displayName = displayName; 
           umbrella.lastUpdateTime = new Date().toISOString();
           dbData.logs.push({ action: "貸出", umbrellaId, userId, displayName, timestamp: new Date().toISOString() });
           result = { success: true, message: "傘を借りました！" };
@@ -53,8 +55,10 @@ app.post("/api/action", async (req, res) => {
         } else if (umbrella.status === "貸出中" && umbrella.userId !== userId) {
             result = { success: false, message: "あなたが借りている傘ではありません。" };
         } else {
+          // ▼▼▼ displayNameもクリアするよう修正 ▼▼▼
           umbrella.status = "利用可能";
           umbrella.userId = "";
+          umbrella.displayName = "";
           umbrella.lastUpdateTime = new Date().toISOString();
           dbData.logs.push({ action: "返却", umbrellaId, userId, displayName, timestamp: new Date().toISOString() });
           result = { success: true, message: "傘を返却しました！" };
@@ -65,7 +69,6 @@ app.post("/api/action", async (req, res) => {
         break;
     }
 
-    // データベースに変更を書き込む
     await fs.writeFile(DB_PATH, JSON.stringify(dbData, null, 2));
     res.status(200).send(result);
   } catch (error) {
@@ -74,15 +77,11 @@ app.post("/api/action", async (req, res) => {
   }
 });
 
-// ▼▼▼ 管理者向けAPIを追加 ▼▼▼
-
-// 管理者向けにログを返すAPIエンドポイント
+// (管理者向けAPIは変更ありません)
 app.get("/api/logs", async (req, res) => {
   const dbData = JSON.parse(await fs.readFile(DB_PATH));
-  res.json(dbData.logs.slice().reverse()); // 最新のものが上に来るように
+  res.json(dbData.logs.slice().reverse());
 });
-
-// 管理者向けに傘の状態を返すAPIエンドポイント
 app.get("/api/status", async (req, res) => {
   const dbData = JSON.parse(await fs.readFile(DB_PATH));
   res.json(dbData.umbrellas);
