@@ -7,6 +7,7 @@
   <style>
     body { font-family: sans-serif; padding: 1rem; color: #333; }
     h1 { text-align: center; }
+    .nav-link { text-align: center; margin-bottom: 1.5rem; }
     table { border-collapse: collapse; width: 100%; max-width: 800px; margin: 1rem auto; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
     th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
     th { background-color: #f2f2f2; }
@@ -16,7 +17,7 @@
 </head>
 <body>
   <h1>傘 在庫状況</h1>
-  <p style="text-align: center;"><a href="/log.html">貸出履歴ログを見る</a></p>
+  <p class="nav-link"><a href="/log.html">貸出履歴ログを見る &gt;</a></p>
   <table id="status-table">
     <thead>
       <tr>
@@ -33,18 +34,16 @@
   <script>
     window.onload = async () => {
       try {
-        // /api/statusからデータを取得
         const response = await fetch('/api/status');
         const umbrellas = await response.json();
-
+        
         const tableBody = document.querySelector("#status-table tbody");
-        tableBody.innerHTML = ''; // テーブルをクリア
+        tableBody.innerHTML = ''; 
 
-        // 取得したデータでテーブルの行を生成
         umbrellas.forEach(umbrella => {
           const row = tableBody.insertRow();
           const statusClass = umbrella.status === '利用可能' ? 'status-available' : 'status-rented';
-
+          
           row.innerHTML = `
             <td>${umbrella.id}</td>
             <td class="${statusClass}">${umbrella.status}</td>
