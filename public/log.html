@@ -7,6 +7,9 @@
   <style>
     body { font-family: sans-serif; padding: 1rem; color: #333; }
     h1 { text-align: center; }
+    .filters { max-width: 800px; margin: 1rem auto; padding: 1rem; background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 8px; display: flex; gap: 1.5rem; align-items: center; }
+    .filters label { font-weight: bold; margin-right: 0.5rem; }
+    .filters select { padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
     table { border-collapse: collapse; width: 100%; max-width: 800px; margin: 1rem auto; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
     th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
     th { background-color: #f2f2f2; }
@@ -16,6 +19,21 @@
 </head>
 <body>
   <h1>貸出履歴ログ</h1>
+
+  <div class="filters">
+    <div>
+      <label for="id-filter">傘ID:</label>
+      <select id="id-filter">
+        <option value="all">すべて</option>
+      </select>
+    </div>
+    <div>
+      <label for="date-filter">日付:</label>
+      <select id="date-filter">
+        <option value="all">すべて</option>
+      </select>
+    </div>
+  </div>
   <table id="log-table">
     <thead>
       <tr>
@@ -30,45 +48,95 @@
   </table>
 
   <script>
-    // ページが読み込まれたら実行
+    let allLogs = []; // 全てのログを保存する変数
+
+    // ページが読み込まれたら実行されるメインの処理
     window.onload = async () => {
       try {
-        // /api/logsからデータを取得
         const response = await fetch('/api/logs');
-        const logs = await response.json();
+        allLogs = await response.json();
+        
+        populateFilters();
+        renderTable();
 
-        const tableBody = document.querySelector("#log-table tbody");
+        // ドロップダウンが変更されたら、テーブルを再描画する
+        document.getElementById('id-filter').addEventListener('change', renderTable);
+        document.getElementById('date-filter').addEventListener('change', renderTable);
 
-        // ログが空の場合のメッセージ
-        if (logs.length === 0) {
-          const row = tableBody.insertRow();
-          const cell = row.insertCell();
-          cell.colSpan = 4;
-          cell.textContent = 'ログはまだありません。';
-          cell.style.textAlign = 'center';
-          return;
-        }
-
-        // 取得したログデータでテーブルの行を生成
-        logs.forEach(log => {
-          const row = tableBody.insertRow();
-          row.innerHTML = `
-            <td>${new Date(log.timestamp).toLocaleString('ja-JP')}</td>
-            <td class="action-${log.action === '貸出' ? 'borrow' : 'return'}">${log.action}</td>
-            <td>${log.umbrellaId}</td>
-            <td>${log.displayName}</td>
-          `;
-        });
       } catch (error) {
-        console.error('ログの取得に失敗しました:', error);
+        handleError('ログの取得に失敗しました。');
+      }
+    };
+
+    // ドロップダウンの中身を作成する関数
+    function populateFilters() {
+      const idFilter = document.getElementById('id-filter');
+      const dateFilter = document.getElementById('date-filter');
+
+      // ログデータから重複しないIDと日付のリストを作成
+      const uniqueIds = [...new Set(allLogs.map(log => log.umbrellaId))];
+      const uniqueDates = [...new Set(allLogs.map(log => new Date(log.timestamp).toLocaleDateString('ja-JP')))];
+
+      // IDのドロップダウンを作成
+      uniqueIds.sort().forEach(id => {
+        const option = document.createElement('option');
+        option.value = id;
+        option.textContent = id;
+        idFilter.appendChild(option);
+      });
+
+      // 日付のドロップダウンを作成（新しい順）
+      uniqueDates.sort((a, b) => new Date(b) - new Date(a)).forEach(date => {
+        const option = document.createElement('option');
+        option.value = date;
+        option.textContent = date;
+        dateFilter.appendChild(option);
+      });
+    }
+
+    // フィルター選択に応じてテーブルを描画する関数
+    function renderTable() {
+      const selectedId = document.getElementById('id-filter').value;
+      const selectedDate = document.getElementById('date-filter').value;
+      const tableBody = document.querySelector("#log-table tbody");
+      
+      tableBody.innerHTML = ''; // テーブルを一旦空にする
+
+      // ログを絞り込み
+      const filteredLogs = allLogs.filter(log => {
+        const logDate = new Date(log.timestamp).toLocaleDateString('ja-JP');
+        const idMatch = (selectedId === 'all' || log.umbrellaId === selectedId);
+        const dateMatch = (selectedDate === 'all' || logDate === selectedDate);
+        return idMatch && dateMatch;
+      });
+
+      if (filteredLogs.length === 0) {
+        handleError('該当するログはありません。');
+        return;
+      }
+
+      // 絞り込んだデータでテーブルの行を生成
+      filteredLogs.forEach(log => {
+        const row = tableBody.insertRow();
+        row.innerHTML = `
+          <td>${new Date(log.timestamp).toLocaleString('ja-JP', { timeStyle: 'medium' })}</td>
+          <td class="action-${log.action === '貸出' ? 'borrow' : 'return'}">${log.action}</td>
+          <td>${log.umbrellaId}</td>
+          <td>${log.displayName}</td>
+        `;
+      });
+    }
+
+    // エラーや「ログなし」メッセージを表示する関数
+    function handleError(message) {
         const tableBody = document.querySelector("#log-table tbody");
+        tableBody.innerHTML = ''; // テーブルをクリア
         const row = tableBody.insertRow();
         const cell = row.insertCell();
         cell.colSpan = 4;
-        cell.textContent = 'ログの取得に失敗しました。';
+        cell.textContent = message;
         cell.style.textAlign = 'center';
-      }
-    };
+    }
   </script>
 </body>
 </html>
