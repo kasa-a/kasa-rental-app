@@ -23,8 +23,7 @@
       <tr>
         <th>傘ID</th>
         <th>ステータス</th>
-        <th>利用者ID</th>
-        <th>最終更新日時</th>
+        <th>利用者名</th> <th>最終更新日時</th>
       </tr>
     </thead>
     <tbody>
@@ -44,10 +43,11 @@
           const row = tableBody.insertRow();
           const statusClass = umbrella.status === '利用可能' ? 'status-available' : 'status-rented';
           
+          // ▼▼▼ umbrella.userId を umbrella.displayName に変更 ▼▼▼
           row.innerHTML = `
             <td>${umbrella.id}</td>
             <td class="${statusClass}">${umbrella.status}</td>
-            <td>${umbrella.userId || '---'}</td>
+            <td>${umbrella.displayName || '---'}</td>
             <td>${umbrella.lastUpdateTime ? new Date(umbrella.lastUpdateTime).toLocaleString('ja-JP') : '---'}</td>
           `;
         });
