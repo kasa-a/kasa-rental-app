@@ -7,18 +7,18 @@
         { "slotId": "STAND-A-01", "umbrellaId": "KASA-A-01", "status": "Available" },
         { "slotId": "STAND-A-02", "umbrellaId": "KASA-A-02", "status": "Available" },
         { "slotId": "STAND-A-03", "umbrellaId": "KASA-A-03", "status": "Available" },
-        { "slotId": "STAND-A-04", "umbrellaId": "KASA-A-04", "status": "Available" },
-        { "slotId": "STAND-A-05", "umbrellaId": "KASA-A-05", "status": "Available" },
-        { "slotId": "STAND-A-06", "umbrellaId": "KASA-A-06", "status": "Available" }
+        { "slotId": "STAND-A-04", "umbrellaId": null, "status": "Empty" },
+        { "slotId": "STAND-A-05", "umbrellaId": null, "status": "Empty" },
+        { "slotId": "STAND-A-06", "umbrellaId": null, "status": "Empty" }
       ]
     },
     {
       "id": "STAND-B",
       "name": "食堂 前",
       "slots": [
-        { "slotId": "STAND-B-01", "umbrellaId": "KASA-B-01", "status": "Available" },
-        { "slotId": "STAND-B-02", "umbrellaId": "KASA-B-02", "status": "Available" },
-        { "slotId": "STAND-B-03", "umbrellaId": "KASA-B-03", "status": "Available" },
+        { "slotId": "STAND-B-01", "umbrellaId": null, "status": "Empty" },
+        { "slotId": "STAND-B-02", "umbrellaId": null, "status": "Empty" },
+        { "slotId": "STAND-B-03", "umbrellaId": null, "status": "Empty" },
         { "slotId": "STAND-B-04", "umbrellaId": "KASA-B-04", "status": "Available" },
         { "slotId": "STAND-B-05", "umbrellaId": "KASA-B-05", "status": "Available" },
         { "slotId": "STAND-B-06", "umbrellaId": "KASA-B-06", "status": "Available" }
