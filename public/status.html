@@ -5,60 +5,76 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>傘 在庫状況</title>
   <style>
-    body { font-family: sans-serif; padding: 1rem; color: #333; }
+    body { font-family: sans-serif; padding: 1rem; color: #333; background-color: #f4f7f6; }
     h1 { text-align: center; }
-    .nav-link { text-align: center; margin-bottom: 1.5rem; }
-    table { border-collapse: collapse; width: 100%; max-width: 800px; margin: 1rem auto; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-    th { background-color: #f2f2f2; }
-    .status-available { color: green; font-weight: bold; }
-    .status-rented { color: red; font-weight: bold; }
+    .nav-link { text-align: center; margin-bottom: 2rem; }
+    .stands-container { display: flex; flex-wrap: wrap; gap: 2rem; justify-content: center; }
+    .stand { background-color: white; border: 1px solid #ddd; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .stand h2 { margin-top: 0; text-align: center; color: #1a535c; }
+    .slots-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    .slot { border-radius: 8px; padding: 1rem; text-align: center; transition: transform 0.2s; }
+    .slot-id { font-weight: bold; font-size: 1.1em; margin: 0 0 0.5rem 0; }
+    .umbrella-id { color: #555; font-size: 0.9em; margin: 0; }
+    .status-Available { background-color: #d4edda; border: 2px solid #c3e6cb; }
+    .status-Empty { background-color: #e9ecef; border: 2px solid #dee2e6; }
+    .status-Empty .umbrella-id { color: #aaa; }
   </style>
 </head>
 <body>
   <h1>傘 在庫状況</h1>
   <p class="nav-link"><a href="/log.html">貸出履歴ログを見る &gt;</a></p>
-  <table id="status-table">
-    <thead>
-      <tr>
-        <th>傘ID</th>
-        <th>ステータス</th>
-        <th>利用者名</th> <th>最終更新日時</th>
-      </tr>
-    </thead>
-    <tbody>
-      </tbody>
-  </table>
+
+  <div id="stands-display" class="stands-container">
+    <p>データを読み込んでいます...</p>
+  </div>
 
   <script>
     window.onload = async () => {
+      const displayDiv = document.getElementById('stands-display');
       try {
         const response = await fetch('/api/status');
-        const umbrellas = await response.json();
+        const data = await response.json();
         
-        const tableBody = document.querySelector("#status-table tbody");
-        tableBody.innerHTML = ''; 
+        displayDiv.innerHTML = ''; // 「読み込んでいます」メッセージをクリア
 
-        umbrellas.forEach(umbrella => {
-          const row = tableBody.insertRow();
-          const statusClass = umbrella.status === '利用可能' ? 'status-available' : 'status-rented';
-          
-          // ▼▼▼ umbrella.userId を umbrella.displayName に変更 ▼▼▼
-          row.innerHTML = `
-            <td>${umbrella.id}</td>
-            <td class="${statusClass}">${umbrella.status}</td>
-            <td>${umbrella.displayName || '---'}</td>
-            <td>${umbrella.lastUpdateTime ? new Date(umbrella.lastUpdateTime).toLocaleString('ja-JP') : '---'}</td>
-          `;
+        // 各傘立ての表示を生成
+        data.stands.forEach(stand => {
+          const standDiv = document.createElement('div');
+          standDiv.className = 'stand';
+
+          const standTitle = document.createElement('h2');
+          standTitle.textContent = stand.name;
+          standDiv.appendChild(standTitle);
+
+          const slotsGrid = document.createElement('div');
+          slotsGrid.className = 'slots-grid';
+
+          // 各スロットの表示を生成
+          stand.slots.forEach(slot => {
+            const slotDiv = document.createElement('div');
+            // ステータスに応じてCSSクラスを付与
+            slotDiv.className = `slot status-${slot.status}`;
+
+            const slotIdP = document.createElement('p');
+            slotIdP.className = 'slot-id';
+            slotIdP.textContent = slot.slotId.split('-')[2]; // 例: "STAND-A-01" -> "01"
+            slotDiv.appendChild(slotIdP);
+
+            const umbrellaIdP = document.createElement('p');
+            umbrellaIdP.className = 'umbrella-id';
+            umbrellaIdP.textContent = slot.umbrellaId ? `(${slot.umbrellaId})` : '（傘なし）';
+            slotDiv.appendChild(umbrellaIdP);
+            
+            slotsGrid.appendChild(slotDiv);
+          });
+
+          standDiv.appendChild(slotsGrid);
+          displayDiv.appendChild(standDiv);
         });
+
       } catch (error) {
         console.error('在庫状況の取得に失敗しました:', error);
-        const tableBody = document.querySelector("#status-table tbody");
-        const row = tableBody.insertRow();
-        const cell = row.insertCell();
-        cell.colSpan = 4;
-        cell.textContent = '情報の取得に失敗しました。';
-        cell.style.textAlign = 'center';
+        displayDiv.innerHTML = '<p>情報の取得に失敗しました。</p>';
       }
     };
   </script>
