@@ -10,9 +10,7 @@
         h1 { color: #333; }
         p { color: #666; font-size: 18px; }
         button { display: block; width: 100%; padding: 15px; font-size: 18px; font-weight: bold; color: white; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.2s; margin-top: 20px;}
-        .borrow-btn { background-color: #00B900; } /* 貸出ボタン */
-        .return-btn { background-color: #007BFF; } /* 返却ボタン */
-        .action-btn { background-color: #007BFF; } /* 統合ボタン */
+        .action-btn { background-color: #007BFF; }
         button:disabled { background-color: #ccc; cursor: not-allowed; }
         .message { margin-top: 20px; font-size: 16px; font-weight: bold; }
     </style>
@@ -28,10 +26,8 @@
 
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script>
-        // ▼▼▼ あなたの情報 ▼▼▼
         const API_URL = 'https://kasa-rental-app.onrender.com/api/action';
         const LIFF_ID = '2007692230-DP9Qo40W';
-        // ▲▲▲ あなたの情報 ▲▲▲
 
         async function main() {
             await liff.init({ liffId: LIFF_ID });
@@ -47,7 +43,8 @@
 
             const profile = await liff.getProfile();
             
-            document.getElementById('infoText').innerHTML = `スロットID: <strong>${slotId}</strong>`;
+            const shortSlotId = slotId.split('-').pop();
+            document.getElementById('infoText').innerHTML = `傘番号: <strong>${shortSlotId}</strong>`;
             const button = document.createElement('button');
             button.innerText = 'タップして傘を借りる / 返す';
             button.className = 'action-btn';
