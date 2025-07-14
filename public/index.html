@@ -4,11 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>傘シェアリング</title>
-    <style> /* CSSは変更ありません */ </style>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; background-color: #f0f2f5; }
+        .container { max-width: 400px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h1 { color: #333; }
+        p { color: #666; font-size: 18px; }
+        button { display: block; width: 100%; padding: 15px; font-size: 18px; font-weight: bold; color: white; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.2s; margin-top: 20px;}
+        .borrow-btn { background-color: #00B900; } /* 貸出ボタン */
+        .return-btn { background-color: #007BFF; } /* 返却ボタン */
+        .action-btn { background-color: #007BFF; } /* 統合ボタン */
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        .message { margin-top: 20px; font-size: 16px; font-weight: bold; }
+    </style>
 </head>
 <body>
     <div class="container">
-        A light blue umbrella icon and the text "kasas" in a rounded sans-serif font, also light blue, arranged horizontally. The umbrella is positioned above and slightly to the left of the text, with the handle of the umbrella aligned with the 'k' in "kasas".
+        <img src="kasa-logo.png" alt="傘シェアリング ロゴ" style="width: 150px; margin-bottom: 20px;">
         <h1 id="title">傘シェアリング</h1>
         <p id="infoText">情報を読み込んでいます...</p>
         <div id="buttonArea"></div>
@@ -17,8 +28,10 @@
 
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script>
+        // ▼▼▼ あなたの情報 ▼▼▼
         const API_URL = 'https://kasa-rental-app.onrender.com/api/action';
         const LIFF_ID = '2007692230-DP9Qo40W';
+        // ▲▲▲ あなたの情報 ▲▲▲
 
         async function main() {
             await liff.init({ liffId: LIFF_ID });
