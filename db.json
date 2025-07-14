@@ -2,7 +2,7 @@
   "stands": [
     {
       "id": "STAND-A",
-      "name": "A傘立て",
+      "name": "1号館 玄関",
       "slots": [
         { "slotId": "STAND-A-01", "umbrellaId": "KASA-A-01", "status": "Available" },
         { "slotId": "STAND-A-02", "umbrellaId": "KASA-A-02", "status": "Available" },
@@ -14,7 +14,7 @@
     },
     {
       "id": "STAND-B",
-      "name": "B傘立て",
+      "name": "食堂 前",
       "slots": [
         { "slotId": "STAND-B-01", "umbrellaId": "KASA-B-01", "status": "Available" },
         { "slotId": "STAND-B-02", "umbrellaId": "KASA-B-02", "status": "Available" },
