@@ -7,7 +7,6 @@
   <style>
     body { font-family: sans-serif; padding: 1rem; color: #333; background-color: #f4f7f6; }
     h1 { text-align: center; }
-    .nav-link { text-align: center; margin-bottom: 2rem; }
     .stands-container { display: flex; flex-wrap: wrap; gap: 2rem; justify-content: center; }
     .stand { background-color: white; border: 1px solid #ddd; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
     .stand h2 { margin-top: 0; text-align: center; color: #1a535c; }
@@ -22,8 +21,6 @@
 </head>
 <body>
   <h1>傘 在庫状況</h1>
-  <p class="nav-link"><a href="/log.html">貸出履歴ログを見る &gt;</a></p>
-
   <div id="stands-display" class="stands-container">
     <p>データを読み込んでいます...</p>
   </div>
@@ -35,9 +32,8 @@
         const response = await fetch('/api/status');
         const data = await response.json();
         
-        displayDiv.innerHTML = ''; // 「読み込んでいます」メッセージをクリア
+        displayDiv.innerHTML = '';
 
-        // 各傘立ての表示を生成
         data.stands.forEach(stand => {
           const standDiv = document.createElement('div');
           standDiv.className = 'stand';
@@ -49,15 +45,13 @@
           const slotsGrid = document.createElement('div');
           slotsGrid.className = 'slots-grid';
 
-          // 各スロットの表示を生成
           stand.slots.forEach(slot => {
             const slotDiv = document.createElement('div');
-            // ステータスに応じてCSSクラスを付与
             slotDiv.className = `slot status-${slot.status}`;
 
             const slotIdP = document.createElement('p');
             slotIdP.className = 'slot-id';
-            slotIdP.textContent = slot.slotId.split('-')[2]; // 例: "STAND-A-01" -> "01"
+            slotIdP.textContent = slot.slotId.split('-').pop();
             slotDiv.appendChild(slotIdP);
 
             const umbrellaIdP = document.createElement('p');
