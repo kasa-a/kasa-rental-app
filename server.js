@@ -21,7 +21,6 @@ app.post("/api/action", async (req, res) => {
     const umbrella = dbData.umbrellas.find((u) => u.id === umbrellaId);
 
     switch (action) {
-      // (checkStatusは変更ありません)
       case "checkStatus":
         if (!umbrella) {
           result = { status: "Not Found" };
@@ -34,12 +33,24 @@ app.post("/api/action", async (req, res) => {
         break;
 
       case "borrow":
+        // ▼▼▼ 1人1本までの制限チェックを追加 ▼▼▼
+        const alreadyBorrowed = dbData.umbrellas.find(
+          (u) => u.status === "貸出中" && u.userId === userId
+        );
+        if (alreadyBorrowed) {
+          result = {
+            success: false,
+            message: "すでに他の傘を借りています。同時に2本以上は借りられません。",
+          };
+          break; // チェックに引っかかったら処理を中断
+        }
+        // ▲▲▲ ここまでが追加部分 ▲▲▲
+
         if (!umbrella) {
           result = { success: false, message: "指定された傘が見つかりません。" };
         } else if (umbrella.status === "貸出中") {
           result = { success: false, message: "この傘はすでに貸し出し中です。" };
         } else {
-          // ▼▼▼ displayNameも保存するよう修正 ▼▼▼
           umbrella.status = "貸出中";
           umbrella.userId = userId;
           umbrella.displayName = displayName; 
@@ -55,7 +66,6 @@ app.post("/api/action", async (req, res) => {
         } else if (umbrella.status === "貸出中" && umbrella.userId !== userId) {
             result = { success: false, message: "あなたが借りている傘ではありません。" };
         } else {
-          // ▼▼▼ displayNameもクリアするよう修正 ▼▼▼
           umbrella.status = "利用可能";
           umbrella.userId = "";
           umbrella.displayName = "";
