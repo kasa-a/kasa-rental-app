@@ -2,76 +2,98 @@ const express = require("express");
 const cors = require("cors");
 const admin = require("firebase-admin");
 
-// ★★★ 秘密鍵を使ってFirebaseを初期化 ★★★
+// 秘密鍵を使ってFirebaseを初期化
 const serviceAccount = require("./firebase-credentials.json");
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 const db = admin.firestore();
 
-// ★★★ Firestoreの設定を変更し、リトライを有効にする ★★★
+// Firestoreの設定を変更し、リトライを有効にする
 db.settings({
   retry: true,
 });
-// ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
-// (これ以降のAPIのロジックは変更ありません)
+// メインの処理を行うAPIエンドポイント
 app.post("/api/action", async (req, res) => {
   try {
     const { slotId, userId, displayName } = req.body;
     let result;
 
+    const slotsRef = db.collection("slots");
     const rentalsRef = db.collection("rentals");
-    
-    const targetSlotDoc = await db.collectionGroup("slots").where("slotId", "==", slotId).get();
-    if (targetSlotDoc.empty) {
-        return res.status(404).send({ success: false, message: "存在しないスロットです。" });
-    }
-    const targetSlotRef = targetSlotDoc.docs[0].ref;
-    const targetSlotData = targetSlotDoc.docs[0].data();
-    const standDoc = await targetSlotRef.parent.parent.get();
-    const standName = standDoc.data().name;
+    const logsRef = db.collection("logs");
 
-    const currentRentalQuery = await rentalsRef.where("userId", "==", userId).limit(1).get();
+    // スキャンされたスロットのドキュメントへの参照を作成
+    const targetSlotRef = slotsRef.doc(slotId);
     
-    if (!currentRentalQuery.empty) { // 返却処理
+    // ユーザーが既に傘を借りているか確認
+    const currentRentalQuery = await rentalsRef.where("userId", "==", userId).limit(1).get();
+
+    // 返却処理
+    if (!currentRentalQuery.empty) {
       const currentRentalDoc = currentRentalQuery.docs[0];
-      if (targetSlotData.status !== "Empty") {
-        result = { success: false, message: "このスロットは空ではありません。空のスロットに返却してください。" };
-      } else {
-        await targetSlotRef.update({ status: "Available", umbrellaId: currentRentalDoc.data().umbrellaId });
-        await currentRentalDoc.ref.delete();
-        db.collection("logs").add({ action: "返却", slotId: slotId, umbrellaId: currentRentalDoc.data().umbrellaId, userId, displayName, timestamp: new Date() });
-        result = { success: true, message: `${standName}の${slotId.split('-')[2]}番に傘(${currentRentalDoc.data().umbrellaId})を返却しました。` };
+      const targetSlotDoc = await targetSlotRef.get();
+
+      if (!targetSlotDoc.exists) {
+        return res.status(404).send({ success: false, message: "返却しようとしているスロットが存在しません。" });
       }
+      if (targetSlotDoc.data().status !== "Empty") {
+        return res.status(400).send({ success: false, message: "このスロットは空ではありません。空のスロットに返却してください。" });
+      }
+      
+      const umbrellaToReturn = currentRentalDoc.data();
+
+      // トランザクションで返却処理を実行
+      await db.runTransaction(async (transaction) => {
+        transaction.update(targetSlotRef, { status: "Available", umbrellaId: umbrellaToReturn.umbrellaId });
+        transaction.delete(currentRentalDoc.ref);
+      });
+
+      // ログを記録
+      await logsRef.add({ action: "返却", slotId, umbrellaId: umbrellaToReturn.umbrellaId, userId, displayName, timestamp: new Date() });
+      result = { success: true, message: `${targetSlotDoc.data().standName}に傘(${umbrellaToReturn.umbrellaId})を返却しました。` };
+    
     } 
-    else { // 貸出処理
-      const alreadyBorrowedQuery = await rentalsRef.where("userId", "==", userId).limit(1).get();
-      if (!alreadyBorrowedQuery.empty) {
-        result = { success: false, message: "すでに他の傘を借りています。同時に2本以上は借りられません。" };
-      } else if (targetSlotData.status !== "Available") {
-        result = { success: false, message: "このスロットに利用可能な傘はありません。" };
-      } else {
-        const umbrellaIdToBorrow = targetSlotData.umbrellaId;
-        await rentalsRef.add({ userId, displayName, umbrellaId: umbrellaIdToBorrow, borrowedFrom: slotId, timestamp: new Date() });
-        await targetSlotRef.update({ status: "Empty", umbrellaId: null });
-        db.collection("logs").add({ action: "貸出", slotId: slotId, umbrellaId: umbrellaIdToBorrow, userId, displayName, timestamp: new Date() });
-        result = { success: true, message: `${standName}の${slotId.split('-')[2]}番から傘(${umbrellaIdToBorrow})を借りました！` };
+    // 貸出処理
+    else {
+      const targetSlotDoc = await targetSlotRef.get();
+      if (!targetSlotDoc.exists) {
+        return res.status(404).send({ success: false, message: "貸出そうとしているスロットが存在しません。" });
       }
+      const targetSlotData = targetSlotDoc.data();
+
+      if (targetSlotData.status !== "Available") {
+        return res.status(400).send({ success: false, message: "このスロットに利用可能な傘はありません。" });
+      }
+
+      const umbrellaIdToBorrow = targetSlotData.umbrellaId;
+
+      // トランザクションで貸出処理を実行
+      await db.runTransaction(async (transaction) => {
+        transaction.update(targetSlotRef, { status: "Empty", umbrellaId: null });
+        transaction.create(rentalsRef.doc(), { userId, displayName, umbrellaId: umbrellaIdToBorrow, borrowedFrom: slotId, timestamp: new Date() });
+      });
+
+      // ログを記録
+      await logsRef.add({ action: "貸出", slotId, umbrellaId: umbrellaIdToBorrow, userId, displayName, timestamp: new Date() });
+      result = { success: true, message: `${targetSlotData.standName}から傘(${umbrellaIdToBorrow})を借りました！` };
     }
+    
     res.status(200).send(result);
 
   } catch (error) {
-    console.error("Error:", error);
-    res.status(500).send({ success: false, message: "サーバーでエラーが発生しました。" });
+    console.error("★★★ サーバーでキャッチしたエラー:", error);
+    res.status(500).send({ success: false, message: "サーバー内部でエラーが発生しました。" });
   }
 });
 
+// 管理者向けAPI
 app.get("/api/logs", async (req, res) => {
     const snapshot = await db.collection("logs").orderBy("timestamp", "desc").get();
     const logs = snapshot.docs.map(doc => {
@@ -82,17 +104,9 @@ app.get("/api/logs", async (req, res) => {
 });
 
 app.get("/api/status", async (req, res) => {
-    const standsSnapshot = await db.collection("stands").get();
-    const standsData = [];
-    for(const standDoc of standsSnapshot.docs) {
-        const stand = {id: standDoc.id, ...standDoc.data(), slots: []};
-        const slotsSnapshot = await standDoc.ref.collection("slots").orderBy("slotId").get();
-        stand.slots = slotsSnapshot.docs.map(slotDoc => slotDoc.data());
-        standsData.push(stand);
-    }
-    const rentalsSnapshot = await db.collection("rentals").get();
-    const borrowedUsers = rentalsSnapshot.docs.map(doc => doc.data());
-    res.json({ stands: standsData, borrowedUsers });
+    const slotsSnapshot = await db.collection("slots").orderBy("slotId").get();
+    const slots = slotsSnapshot.docs.map(doc => doc.data());
+    res.json({ slots });
 });
 
 const PORT = process.env.PORT || 3000;
