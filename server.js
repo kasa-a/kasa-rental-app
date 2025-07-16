@@ -29,10 +29,8 @@ app.post("/api/action", async (req, res) => {
     const rentalsRef = db.collection("rentals");
     const logsRef = db.collection("logs");
 
-    // スキャンされたスロットのドキュメントへの参照を作成
     const targetSlotRef = slotsRef.doc(slotId);
     
-    // ユーザーが既に傘を借りているか確認
     const currentRentalQuery = await rentalsRef.where("userId", "==", userId).limit(1).get();
 
     // 返却処理
@@ -49,13 +47,12 @@ app.post("/api/action", async (req, res) => {
       
       const umbrellaToReturn = currentRentalDoc.data();
 
-      // トランザクションで返却処理を実行
       await db.runTransaction(async (transaction) => {
-        transaction.update(targetSlotRef, { status: "Available", umbrellaId: umbrellaToReturn.umbrellaId });
+        // ▼▼▼ "利用可能"に修正 ▼▼▼
+        transaction.update(targetSlotRef, { status: "利用可能", umbrellaId: umbrellaToReturn.umbrellaId });
         transaction.delete(currentRentalDoc.ref);
       });
 
-      // ログを記録
       await logsRef.add({ action: "返却", slotId, umbrellaId: umbrellaToReturn.umbrellaId, userId, displayName, timestamp: new Date() });
       result = { success: true, message: `${targetSlotDoc.data().standName}に傘(${umbrellaToReturn.umbrellaId})を返却しました。` };
     
@@ -67,20 +64,23 @@ app.post("/api/action", async (req, res) => {
         return res.status(404).send({ success: false, message: "貸出そうとしているスロットが存在しません。" });
       }
       const targetSlotData = targetSlotDoc.data();
-
-      if (targetSlotData.status !== "Available") {
+      
+      const alreadyBorrowedQuery = await rentalsRef.where("userId", "==", userId).limit(1).get();
+      if (!alreadyBorrowedQuery.empty) {
+          return res.status(400).send({ success: false, message: "すでに他の傘を借りています。同時に2本以上は借りられません。" });
+      } 
+      // ▼▼▼ "利用可能"に修正 ▼▼▼
+      else if (targetSlotData.status !== "利用可能") {
         return res.status(400).send({ success: false, message: "このスロットに利用可能な傘はありません。" });
       }
 
       const umbrellaIdToBorrow = targetSlotData.umbrellaId;
 
-      // トランザクションで貸出処理を実行
       await db.runTransaction(async (transaction) => {
         transaction.update(targetSlotRef, { status: "Empty", umbrellaId: null });
         transaction.create(rentalsRef.doc(), { userId, displayName, umbrellaId: umbrellaIdToBorrow, borrowedFrom: slotId, timestamp: new Date() });
       });
 
-      // ログを記録
       await logsRef.add({ action: "貸出", slotId, umbrellaId: umbrellaIdToBorrow, userId, displayName, timestamp: new Date() });
       result = { success: true, message: `${targetSlotData.standName}から傘(${umbrellaIdToBorrow})を借りました！` };
     }
@@ -93,7 +93,7 @@ app.post("/api/action", async (req, res) => {
   }
 });
 
-// 管理者向けAPI
+// (管理者向けAPIは変更ありません)
 app.get("/api/logs", async (req, res) => {
     const snapshot = await db.collection("logs").orderBy("timestamp", "desc").get();
     const logs = snapshot.docs.map(doc => {
