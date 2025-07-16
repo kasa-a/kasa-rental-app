@@ -7,8 +7,9 @@
   <style>
     body { font-family: sans-serif; padding: 1rem; color: #333; background-color: #f4f7f6; }
     h1 { text-align: center; }
+    .nav-link { text-align: center; margin-bottom: 2rem; }
     .stands-container { display: flex; flex-wrap: wrap; gap: 2rem; justify-content: center; }
-    .stand { background-color: white; border: 1px solid #ddd; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .stand { background-color: white; border: 1px solid #ddd; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.08); min-width: 320px;}
     .stand h2 { margin-top: 0; text-align: center; color: #1a535c; }
     .slots-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
     .slot { border-radius: 8px; padding: 1rem; text-align: center; transition: transform 0.2s; }
@@ -21,6 +22,8 @@
 </head>
 <body>
   <h1>傘 在庫状況</h1>
+  <p class="nav-link"><a href="/log.html">貸出履歴ログを見る &gt;</a></p>
+
   <div id="stands-display" class="stands-container">
     <p>データを読み込んでいます...</p>
   </div>
@@ -30,11 +33,27 @@
       const displayDiv = document.getElementById('stands-display');
       try {
         const response = await fetch('/api/status');
-        const data = await response.json();
+        const data = await response.json(); // ここで { slots: [...] } を受け取る
         
-        displayDiv.innerHTML = '';
+        if (!data.slots || data.slots.length === 0) {
+          displayDiv.innerHTML = '<p>在庫データがありません。</p>';
+          return;
+        }
 
-        data.stands.forEach(stand => {
+        displayDiv.innerHTML = ''; 
+
+        // データを傘立てごとにグループ化する
+        const stands = {};
+        data.slots.forEach(slot => {
+          if (!stands[slot.standId]) {
+            stands[slot.standId] = { name: slot.standName, slots: [] };
+          }
+          stands[slot.standId].slots.push(slot);
+        });
+
+        // グループ化したデータで表示を生成
+        for (const standId in stands) {
+          const stand = stands[standId];
           const standDiv = document.createElement('div');
           standDiv.className = 'stand';
 
@@ -64,7 +83,7 @@
 
           standDiv.appendChild(slotsGrid);
           displayDiv.appendChild(standDiv);
-        });
+        }
 
       } catch (error) {
         console.error('在庫状況の取得に失敗しました:', error);
